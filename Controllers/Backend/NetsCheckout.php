@@ -16,9 +16,9 @@ class Shopware_Controllers_Backend_NetsCheckout  extends Shopware_Controllers_Ba
         if($payment) {
             $params = ['data' => ['id' => $payment->getOrderId(),
                 'orderId' => $payment->getOrderId(),
-                'amountAuthorized' => ($payment->getAmountAuthorized() - $payment->getAmountCaptured()) / 100,
-                'amountCaptured' => $payment->getAmountCaptured(),
-                'amountRefunded' => $payment->getAmountRefunded()]];
+                'amountAuthorized' => ($payment->getAmountAuthorized() - $payment->getAmountCaptured() ) / 100,
+                'amountCaptured' => ($payment->getAmountCaptured() - $payment->getAmountRefunded() ) / 100,
+                'amountRefunded' => $payment->getAmountRefunded() / 100]];
         } else {
             $params = ['data' => []];
 
@@ -39,8 +39,26 @@ class Shopware_Controllers_Backend_NetsCheckout  extends Shopware_Controllers_Ba
 
       }catch (\Exception $ex ) {
           $params = ["success" => false,
-              "msg" => "success"];
+              "msg" => "fail"];
       }
           $this->View()->assign($params);
+    }
+
+    public function refundAction() {
+        $orderId = $this->Request()->get('id');;
+        /** @var $service \NetsCheckoutPayment\Components\NetsCheckoutService */
+        $service = $this->get('nets_checkout.checkout_service');
+        $amountToRefund = str_replace(',', '.', $this->Request()->get('amountCaptured')) * 100;
+
+        try {
+            $service->refundPayment($orderId, $amountToRefund);
+            $params = ["success" => true,
+                "msg" => "success"];
+
+        }catch (\Exception $ex ) {
+            $params = ["success" => false,
+                "msg" => "fail"];
+        }
+        $this->View()->assign($params);
     }
 }

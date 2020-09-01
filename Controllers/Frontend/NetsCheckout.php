@@ -22,11 +22,9 @@ class Shopware_Controllers_Frontend_NetsCheckout extends Shopware_Controllers_Fr
     }
 
     public function indexAction() {
-
         if(empty($this->getBasket())) {
              return $this->redirect(['controller' => 'checkout', 'action' => 'confirm']);
         }
-
         try {
             $payment = $this->service->createPayment($this->session->offsetGet('sUserId'), $this->getBasket(), $this->session->offsetGet('sessionId'));
             $order = json_decode( $payment, true );
@@ -59,7 +57,12 @@ class Shopware_Controllers_Frontend_NetsCheckout extends Shopware_Controllers_Fr
 
         if($payment->getReservedAmount() || $payment->getPaymentMethod()) {
             $paymentId = $this->request->get('paymentid');
-            $orderNumber = $this->saveOrder(($this->request->get('paymentid')), $paymentId, Status::PAYMENT_STATE_RESERVED);
+
+            // autocapture was enbaled for the order
+            $paymentStatus = $payment->getChargedAmount() == $payment->getReservedAmount() ?
+                             Status::PAYMENT_STATE_COMPLETELY_PAID : Status::PAYMENT_STATE_RESERVED;
+
+            $orderNumber = $this->saveOrder(($this->request->get('paymentid')), $paymentId, $paymentStatus);
 
             if($orderNumber) {
                     // update reference from temporary to real orderid through Nets api

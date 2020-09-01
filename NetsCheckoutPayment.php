@@ -8,13 +8,13 @@ use NetsCheckoutPayment\Models\NetsCheckoutPayment as PaymentModel;
 
 use NetsCheckoutPayment\Models\NetsCheckoutPaymentApiOperations as OperationsModel;
 
-
 use Shopware\Components\Model\ModelManager;
 use Shopware\Components\Plugin;
 use Shopware\Components\Plugin\Context\InstallContext;
 use Shopware\Components\Plugin\Context\ActivateContext;
 use Shopware\Components\Plugin\Context\DeactivateContext;
 use Shopware\Components\Plugin\Context\UninstallContext;
+use function Shopware;
 
 class NetsCheckoutPayment extends Plugin
 {
@@ -37,6 +37,7 @@ class NetsCheckoutPayment extends Plugin
             ];
             $installer->createOrUpdate($context->getPlugin(), $options);
             $this->createTables();
+            $this->addStates();
         }
 
         /**
@@ -44,9 +45,8 @@ class NetsCheckoutPayment extends Plugin
          */
         public function uninstall(UninstallContext $context)
         {
-            $this->removeTables();
+            //$this->removeTables();
             $this->setActiveFlag($context->getPlugin()->getPayments(), false);
-
         }
 
         /**
@@ -86,15 +86,12 @@ class NetsCheckoutPayment extends Plugin
     {
         /** @var ModelManager $entityManager */
         $entityManager = $this->container->get('models');
-
         $tool = new SchemaTool($entityManager);
-
         $classMetaData = [
             $entityManager->getClassMetadata(PaymentModel::class),
             $entityManager->getClassMetadata(OperationsModel::class),
 
         ];
-
         $tool->updateSchema($classMetaData, true);
     }
 
@@ -116,4 +113,30 @@ class NetsCheckoutPayment extends Plugin
         $tool->dropSchema($classMetaData);
     }
 
+    /**
+     * add new states to s_oreder_states for fully and partially refund
+     *
+     * @throws \Zend_Db_Adapter_Exception
+     */
+    private function addStates() {
+        $sql = " SELECT * FROM `s_core_states` WHERE  `name` = 'partially_refunded'";
+        $row = Shopware()->Db()->fetchOne($sql);
+
+        if(!$row) {
+            $sql = "SET @state_id := (select max(id) from s_core_states) + 1;
+                    INSERT INTO `s_core_states` (`id`, `name`, `description`, `position`, `group`, `mail`) 
+                    VALUES (@state_id, ?, ?, @state_id, ?, ?);";
+            Shopware()->Db()->query($sql, ['partially_refunded', 'Partially refunded', 'payment', 0]);
+        }
+
+        $sql = " SELECT * FROM `s_core_states` WHERE  `name` = 'completely_refunded'";
+        $row = Shopware()->Db()->fetchOne($sql);
+
+        if(!$row) {
+            $sql = "SET @state_id := (select max(id) from s_core_states) + 1;
+                    INSERT INTO `s_core_states` (`id`, `name`, `description`, `position`, `group`, `mail`) 
+                    VALUES (@state_id, ?, ?, @state_id, ?, ?);";
+            Shopware()->Db()->query($sql, ['completely_refunded', 'Completely refunded', 'payment', 0]);
+        }
+    }
 }

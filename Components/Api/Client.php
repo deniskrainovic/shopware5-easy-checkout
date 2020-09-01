@@ -40,8 +40,9 @@ class Client
         try {
             $params = ['headers' => $this->headers,
                 'body' => $data];
-            return $this->client->post($url, $params);
-        }catch(\Exception $ex) {
+            $result = $this->client->post($url, $params);
+            return $result;
+        }catch (\Exception $ex) {
             throw new EasyApiException($ex->getMessage(), $ex->getCode());
         }
     }

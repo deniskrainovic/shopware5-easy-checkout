@@ -6,6 +6,8 @@ use NetsCheckoutPayment\Models\NetsCheckoutPayment;
 use NetsCheckoutPayment\Models\NetsCheckoutPaymentApiOperations;
 use Shopware\Models\Order\Order;
 use Shopware\Models\Customer\Customer;
+use Shopware\Models\Order\Status;
+use function Shopware;
 
 class NetsCheckoutService
 {
@@ -66,19 +68,8 @@ class NetsCheckoutService
                     'firstName' => $this->stringFilter( $customer->getFirstname()),
                     'lastName' => $this->stringFilter(  $customer->getLastname())]
             ];
-
-        $data['notifications'] =
-            ['webhooks' =>
-                [
-                    ['eventName' => 'payment.checkout.completed',
-                        'url' => 'https://some-url.com',
-                        'authorization' => substr(str_shuffle(MD5(microtime())), 0, 10)]
-        ]];
-
         $session = Shopware()->Container()->get('session');
-
         $session->offsetSet('nets_items_json', json_encode($data));
-
         return $data;
     }
 
@@ -111,27 +102,11 @@ class NetsCheckoutService
 
     public function getOrderItemsFromPayment($requestJson) {
          $requestArray = json_decode( $requestJson , true);
-
-//        echo "<pre>";
-//
-//        var_dump( $requestArray['order']['items'] );
-//
-//        var_dump( $requestArray['order']['amount'] );
-
-
         $result = ['amount' => $requestArray['order']['amount'],
             'orderItems' => $requestArray['order']['items']
         ];
-
-//
-//        var_dump( $result );
-//
-//        echo "</pre>";
-
          return $result;
     }
-
-
 
     private function prepareAmount($amount = 0) {
         return (int)round($amount * 100);
@@ -188,10 +163,9 @@ class NetsCheckoutService
 
             $rep = Shopware()->Models()->getRepository(Order::class);
 
-            $result = $rep->findOneBy(['number' => $orderId]);
+            $resultOrder = $rep->findOneBy(['number' => $orderId]);
 
-            $paymentId = $result->getTransactionId();
-
+            $paymentId = $resultOrder->getTransactionId();
 
             if($amount == $payment->getAmountAuthorized()) {
                 $itemsJson = $payment->getItemsJson();
@@ -211,6 +185,15 @@ class NetsCheckoutService
             Shopware()->Models()->persist($payment);
             Shopware()->Models()->flush($payment);
 
+            $order = Shopware()->Modules()->Order();
+
+            // update order status
+            if($payment->getAmountAuthorized() == $payment->getAmountCaptured()) {
+                $order->setPaymentStatus($resultOrder->getId(), Status::PAYMENT_STATE_COMPLETELY_PAID, false);
+            }else {
+                $order->setPaymentStatus($resultOrder->getId(), Status::PAYMENT_STATE_PARTIALLY_PAID, false);
+            }
+
             // update Operations model
             /** @var  $paymentOperation \NetsCheckoutPayment\Models\NetsCheckoutPaymentApiOperations */
             $paymentOperation = new NetsCheckoutPaymentApiOperations();
@@ -227,50 +210,33 @@ class NetsCheckoutService
     }
 
     public function refundPayment($orderId, $amount) {
-        try {
-
-            $amountInitial = $amount;
-
-            // update captured amount in Payments models
             /** @var  $payment \NetsCheckoutPayment\Models\NetsCheckoutPayment */
-
             $payment = Shopware()->Models()->getRepository(NetsCheckoutPayment::class)->findOneBy(['orderId' => $orderId]);
-
-            if ($amount > $payment->getAmountCaptured()) {
-
+            if ($amount > $payment->getAmountCaptured() || $amount <= 0) {
                 throw new \Exception('wrong amount');
             }
-
-
+            $rep = Shopware()->Models()->getRepository(Order::class);
+            $resultOrder = $rep->findOneBy(['number' => $orderId]);
             $criteria = new \Doctrine\Common\Collections\Criteria();
-            $criteria->where($criteria->expr()->eq('orderId', $orderId)); //->andWhere( $criteria->expr()->gt('amountAvailable', 0));
-
-
+            $criteria->where($criteria->expr()->eq('orderId', $orderId));
             $payOperation = Shopware()->Models()
                 ->getRepository(NetsCheckoutPaymentApiOperations::class)
                 ->findBy(['orderId' => $orderId]);
-
             $this->apiService->setAuthorizationKey($this->getAuthorizationKey());
-
             foreach ($payOperation as $operation) {
-
                 /** @var  $operation \NetsCheckoutPayment\Models\NetsCheckoutPaymentApiOperations */
-                $operation;
-
                 $amountToRefund = 0;
                 $amountAvailableToRefund = $operation->getAmountAvailable();
                 if ($amountAvailableToRefund > 0 && $operation->getOperationType() == 'capture' && $amount > 0) {
-
                     $amountToRefund = $amountAvailableToRefund - $amount <= 0 ? $amountAvailableToRefund : $amount;
-
-                    echo $amountToRefund . '---' . $operation->getId() . "<br>";
-
-
-                    $data = json_encode($this->orderRowsOperation($amountToRefund, 'item1'));
-
-                    $result = $this->apiService->refundPayment($operation->getOperationId() , $data);
-
-
+                    if($amountToRefund == $payment->getAmountAuthorized() && $amountToRefund == $payment->getAmountCaptured()) {
+                        $itemsJson = $payment->getItemsJson();
+                        $res = $this->getOrderItemsFromPayment($itemsJson);
+                        $data = json_encode($res);
+                    } else {
+                        $data = json_encode($this->orderRowsOperation($amount, 'item1'));
+                    }
+                    $result = $this->apiService->refundPayment($operation->getOperationId(), $data);
                     // update Operations model
                     /** @var  $paymentOperation \NetsCheckoutPayment\Models\NetsCheckoutPaymentApiOperations */
                     $paymentOperation = new NetsCheckoutPaymentApiOperations();
@@ -283,34 +249,31 @@ class NetsCheckoutService
 
                     Shopware()->Models()->persist($paymentOperation);
                     Shopware()->Models()->flush($paymentOperation);
-
                     $amount = $amount - $amountToRefund;
 
                     $operation->setAmountAvailable($operation->getAmountAvailable() - $amountToRefund);
                     Shopware()->Models()->persist($operation);
                     Shopware()->Models()->flush($operation);
 
-
-
                     $payment->setAmountRefunded($payment->getAmountRefunded() + $amountToRefund);
                     Shopware()->Models()->persist($payment);
                     Shopware()->Models()->flush($payment);
+
+                    $order = Shopware()->Modules()->Order();
+                    if(0 == $payment->getAmountAuthorized() - $payment->getAmountRefunded()) {
+                        $sql = " SELECT `id` FROM `s_core_states` WHERE  `name` = 'completely_refunded' ";
+                        $id = Shopware()->Db()->fetchOne($sql);
+                        $order->setPaymentStatus($resultOrder->getId(), $id, false);
+                    }else {
+                        $sql = " SELECT `id` FROM `s_core_states` WHERE  `name` = 'partially_refunded' ";
+                        $id = Shopware()->Db()->fetchOne($sql);
+                        $order->setPaymentStatus($resultOrder->getId(), $id, false);
+                    }
                 }
-
-
-
             }
-
-
-
-
-        }catch (\Exception $ex) {
-            echo  $ex->getMessage();
-        }
     }
 
     private function orderRowsOperation($amount, $name) {
-
         $result = ['amount' => $amount,
                    'orderItems' => [
                         ['reference' => 'ref1',
@@ -324,9 +287,7 @@ class NetsCheckoutService
                          'netTotalAmount'=> $amount]
                     ]
             ];
-
         return $result;
-
     }
 
     private function getAuthorizationKey() {
