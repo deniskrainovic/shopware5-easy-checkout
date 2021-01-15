@@ -93,8 +93,9 @@ class NetsCheckoutService
                 'netTotalAmount' => $this->prepareAmount( $item['itemInfoArray']['unit']['unit'])];
         }
 
+		// Passing shipping cost to be added in basket
         if( $basket['sShippingcosts'] > 0 ) {
-            $items[] = $this->shippingCostLine();
+            $items[] = $this->shippingCostLine($basket);
         }
 
         return $items;
