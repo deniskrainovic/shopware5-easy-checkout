@@ -61,13 +61,22 @@ class NetsCheckoutService
         if(Shopware()->Config()->getByNamespace('NetsCheckoutPayment', 'chargenow')) {
             $data['checkout']['charge'] = true;
         }
-
-        $data['checkout']['consumer'] =
-            ['email' =>  $customer->getEmail(),
-                'privatePerson' => [
-                    'firstName' => $this->stringFilter( $customer->getFirstname()),
-                    'lastName' => $this->stringFilter(  $customer->getLastname())]
-            ];
+		
+		// B2B and B2C switch for checkout consumers
+		if(!empty($customer->getDefaultBillingAddress()->getCompany())){
+			$data['checkout']['consumer']['company'] = ['name' => $customer->getDefaultBillingAddress()->getCompany(),
+                    'contact' =>
+                        ['firstName' => $this->stringFilter( $customer->getFirstname()),
+                         'lastName' => $this->stringFilter( $customer->getLastname()) ]];
+		}else{
+			$data['checkout']['consumer'] =
+				['email' =>  $customer->getEmail(),
+					'privatePerson' => [
+						'firstName' => $this->stringFilter( $customer->getFirstname()),
+						'lastName' => $this->stringFilter(  $customer->getLastname())]
+				];
+		}
+			
         $session = Shopware()->Container()->get('session');
         $session->offsetSet('nets_items_json', json_encode($data));
         return $data;
