@@ -91,17 +91,22 @@ class NetsCheckoutService
             $taxAmount = (float) str_replace(',', '.', $item['tax']);
 
             $items[] = [
-                'reference' => $item['itemInfoArray']['reference'],
+                //'reference' => $item['itemInfoArray']['reference'],
+				'reference' => $this->stringFilter($item['articleID']),
                 'name' => $this->stringFilter($item['articlename']),
                 'quantity' => $item['quantity'],
-                'unit' =>  $item['itemInfoArray']['unit']['unit'],
+                //'unit' =>  $item['itemInfoArray']['unit']['unit'],
+				'unit' =>  'pcs',
                 'unitPrice' => $this->prepareAmount( $item['amountnetNumeric']),
                 'taxRate' => $this->prepareAmount( $item['tax_rate']),
                 'taxAmount' => $this->prepareAmount($taxAmount),
-                'grossTotalAmount' => $this->prepareAmount( $item['amountNumeric']),
-                'netTotalAmount' => $this->prepareAmount( $item['itemInfoArray']['unit']['unit'])];
+                //'grossTotalAmount' => $this->prepareAmount( $item['amountNumeric']),
+                //'netTotalAmount' => $this->prepareAmount( $item['itemInfoArray']['unit']['unit']),
+				'grossTotalAmount' => ($this->prepareAmount( $item['amountNumeric'])),
+                'netTotalAmount' => $this->prepareAmount( $item['amountNumeric'])
+			];
         }
-
+		
 		// Passing shipping cost to be added in basket
         if( $basket['sShippingcosts'] > 0 ) {
             $items[] = $this->shippingCostLine($basket);
@@ -143,10 +148,14 @@ class NetsCheckoutService
             'quantity' => 1,
             'unit' => 'pcs',
             'unitPrice' => $this->prepareAmount($basket['sShippingcosts']),
-            'taxRate' => 0,
-            'taxAmount' => 0,
-            'grossTotalAmount' => $this->prepareAmount($basket['sShippingcosts']),
-            'netTotalAmount' => $this->prepareAmount( $basket['sShippingcosts'] )
+            //'taxRate' => 0,
+            //'taxAmount' => 0,
+			'taxRate' => $this->prepareAmount($basket['sShippingcostsTax']),
+            'taxAmount' => $this->prepareAmount($basket['sShippingcostsWithTax'] - $basket['sShippingcostsNet']),
+            //'grossTotalAmount' => $this->prepareAmount($basket['sShippingcosts']),
+            //'netTotalAmount' => $this->prepareAmount( $basket['sShippingcosts'] ),
+			'grossTotalAmount' => $this->prepareAmount($basket['sShippingcostsWithTax']),
+            'netTotalAmount' => $this->prepareAmount( $basket['sShippingcostsNet'] )
         ];
     }
 
