@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/5.2/engine/Shopware/Components/Plugin/schema/config.xsd">
     <elements>
-        <element required="true" type="text">
+        <element required="true" type="text" scope="shop">
             <name>test_secret_key</name>
             <label lang="de">Test Secret Key</label>
             <label lang="en">Test Secret Key</label>
         </element>
-        <element required="true" type="text">
+        <element required="true" type="text" scope="shop">
             <name>live_secret_key</name>
             <label lang="en">Live Secret Key</label>
             <label lang="de">Live Secret Key</label>
         </element>
-        <element required="true" type="boolean">
+        <element required="true" type="boolean" scope="shop">
             <name>testmode</name>
             <label lang="de">Testmode Aktiviert</label>
             <label lang="en">Test Mode</label>
@@ -44,13 +44,13 @@
                 </option>
             </store>
         </element>
-        <element required="true" type="boolean">
+        <element required="true" type="boolean" scope="shop">
             <name>chargenow</name>
             <label lang="de">Autocaoture </label>
             <label lang="en">Autocapture </label>
             <value>0</value>
         </element>
-        <element required="true" type="text">
+        <element required="true" type="text" scope="shop">
             <name>terms_and_conditions_url</name>
             <label lang="en">Terms and conditions url</label>
             <label lang="de">Terms and conditions url</label>
