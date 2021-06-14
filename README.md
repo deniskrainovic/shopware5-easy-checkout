@@ -39,7 +39,7 @@
 * Nets payment plugin is not visible as a payment method
 - Ensure the Nets plugin is available in the right Sales Channel in the plugin configuration.
 - Under Sales Channel section select your Shop Name for General Settings. Add plugin in Payment methods.
-- Temporarily switch to Shopware 6 standard template. Custom templates might need addtional changes to ensure correct display. Consult with your webdesigner / developer.
+- Temporarily switch to Shopware 5 standard template. Custom templates might need addtional changes to ensure correct display. Consult with your webdesigner / developer.
 
 * Nets payment window is blank
 - Ensure your keys in Nets plugin Settings are correct and with no additional blank spaces.
