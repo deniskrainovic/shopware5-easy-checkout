@@ -44,10 +44,14 @@ class NetsCheckoutService
             'forceSecure' => true
         ]);
 
+        $listItems = $this->getOrderItems($basket, $customer);
+        $totalAmt = $listItems['totalAmount'];
+
+        unset($listItems['totalAmount']);
         $data = [
             'order' => [
-                'items' => $this->getOrderItems($basket),
-                'amount' => $this->prepareAmount($basket['sAmount']),
+                'items' => $listItems,
+                'amount' => $totalAmt,
                 'currency' => $basket['sCurrencyName'],
                 'reference' => $temporaryOrderId
             ]
@@ -98,36 +102,90 @@ class NetsCheckoutService
         return $data;
     }
 
-    private function getOrderItems(array $basket): array
+    private function getOrderItems(array $basket, $customer = NULL): array
     {
         $items = [];
         // Products
         $content = $basket['content'];
 
+        $custMode = $custGrossAmount = false;
+
+        if (! empty($customer)) {
+            $custMode = $customer->getGroup()->getMode();
+            $custGrossAmount = $customer->getGroup()->getTax();
+        }
+
+        $totalAmount = 0;
         foreach ($content as $item) {
+
             $quantity = $item['quantity'];
             $product = $item['priceNumeric'];
-            $taxAmount = (float) str_replace(',', '.', $item['tax']);
-            $taxFormat = '1' . str_pad(number_format((float) $item['tax_rate'], 2, '.', ''), 5, '0', STR_PAD_LEFT);
-            $unitPrice = round(round(($product * 100) / $taxFormat, 2) * 100);
-            $grossAmount = round($quantity * ($product * 100));
-            $netAmount = round($quantity * $unitPrice);
-            $items[] = [
-                'reference' => $this->stringFilter($item['articleID']),
-                'name' => $this->stringFilter($item['articlename']),
-                'quantity' => $item['quantity'],
-                'unit' => 'pcs',
-                'unitPrice' => $this->prepareAmount($item['netprice']),
-                'taxRate' => $this->prepareAmount($item['tax_rate']),
-                'taxAmount' => $grossAmount - $netAmount,
-                'grossTotalAmount' => $grossAmount,
-                'netTotalAmount' => $netAmount
-            ];
+            if (empty($custMode)) {
+                if ($custGrossAmount) {
+                    $taxFormat = '1' . str_pad(number_format((float) $item['tax_rate'], 2, '.', ''), 5, '0', STR_PAD_LEFT);
+                    $unitPrice = round(round(($product * 100) / $taxFormat, 2) * 100);
+                    $grossAmount = round($quantity * ($product * 100));
+                    $netAmount = round($quantity * $unitPrice);
+                    $taxAmount = $grossAmount - $netAmount;
+                } else {
+                    $taxAmount = (float) str_replace(',', '.', $item['tax']);
+                    $unitPrice = round($item['netprice'] * 100);
+                    $grossAmount = round($quantity * ($product * 100));
+                    $netAmount = round($quantity * $unitPrice);
+                    $taxAmount = $taxAmount * 100;
+                    $grossAmount = $grossAmount + $taxAmount;
+                }
+
+                $items[] = [
+                    'reference' => $this->stringFilter($item['articleID']),
+                    'name' => $this->stringFilter($item['articlename']),
+                    'quantity' => $quantity,
+                    'unit' => 'pcs',
+                    'unitPrice' => $this->prepareAmount($item['netprice']),
+                    'taxRate' => $this->prepareAmount($item['tax_rate']),
+                    'taxAmount' => $taxAmount,
+                    'grossTotalAmount' => $grossAmount,
+                    'netTotalAmount' => $netAmount
+                ];
+            } else {
+                if ($custGrossAmount) {
+                    $taxFormat = '1' . str_pad(number_format((float) $item['tax_rate'], 2, '.', ''), 5, '0', STR_PAD_LEFT);
+                    $unitPrice = round(round(($product * 100) / $taxFormat, 2) * 100);
+                    $grossAmount = round($quantity * ($product * 100));
+                    $netAmount = round($quantity * $unitPrice);
+                    $taxAmount = $grossAmount - $netAmount;
+                } else {
+                    $taxAmount = (float) str_replace(',', '.', $item['tax']);
+                    $unitPrice = round($item['netprice'] * 100);
+                    $grossAmount = round($quantity * ($product * 100));
+                    $netAmount = round($quantity * $unitPrice);
+                    $taxAmount = $taxAmount * 100;
+                    $grossAmount = $grossAmount + $taxAmount;
+                }
+
+                $items[] = [
+                    'reference' => $this->stringFilter($item['articleID']),
+                    'name' => $this->stringFilter($item['articlename']),
+                    'quantity' => $quantity,
+                    'unit' => 'pcs',
+                    'unitPrice' => $this->prepareAmount($item['netprice']),
+                    'taxRate' => $this->prepareAmount($item['tax_rate']),
+                    'taxAmount' => $taxAmount,
+                    'grossTotalAmount' => $grossAmount,
+                    'netTotalAmount' => $netAmount
+                ];
+            }
+
+            $totalAmount = $totalAmount + $grossAmount;
         }
 
         // Passing shipping cost to be added in basket
         if ($basket['sShippingcosts'] > 0) {
-            $items[] = $this->shippingCostLine($basket);
+            $shipping = $this->shippingCostLine($basket);
+            $items[] = $shipping;
+            $items['totalAmount'] = $totalAmount + $shipping['grossTotalAmount'];
+        } else {
+            $items['totalAmount'] = $totalAmount;
         }
 
         return $items;

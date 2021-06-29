@@ -6,7 +6,7 @@
 |Author | `Nets eCom`
 |Prefix | `EASY-SW5`
 |Shop Version | `5+`
-|Version | `1.0.4`
+|Version | `1.0.5`
 |Guide | https://tech.nets.eu/shopmodules
 |Github | https://github.com/DIBS-Payment-Services/shopware5-easy-checkout
 
@@ -14,7 +14,7 @@
 
 ### Download / Installation
 1. Unzip and upload the plugin file manually to root/custom/plugins OR Upload the zipped plugin file(https://github.com/DIBS-Payment-Services/shopware5-easy-checkout/tree/master/package)
-"NetsCheckoutPayment-shopware5-1.0.4" in admin > Configuration > Plugin Manager and using the 'Upload plugin' option.
+"NetsCheckoutPayment-shopware5-1.0.5" in admin > Configuration > Plugin Manager and using the 'Upload plugin' option.
 2. Clear your cache and refresh after a successful installation in admin > configuration > Cache/Performance.
 
 
@@ -39,7 +39,7 @@
 * Nets payment plugin is not visible as a payment method
 - Ensure the Nets plugin is available in the right Sales Channel in the plugin configuration.
 - Under Sales Channel section select your Shop Name for General Settings. Add plugin in Payment methods.
-- Temporarily switch to Shopware 6 standard template. Custom templates might need addtional changes to ensure correct display. Consult with your webdesigner / developer.
+- Temporarily switch to Shopware 5 standard template. Custom templates might need addtional changes to ensure correct display. Consult with your webdesigner / developer.
 
 * Nets payment window is blank
 - Ensure your keys in Nets plugin Settings are correct and with no additional blank spaces.
