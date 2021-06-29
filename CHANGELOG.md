@@ -12,7 +12,7 @@
 
 ## CHANGELOG
 
-### Version 1.0.5 - Released 2021-06-14
+### Version 1.0.5 - Released 2021-06-29
 * Fixed : Bugfixes in calculations as per product net/gross amounts 
 
 ### Version 1.0.4 - Released 2021-06-14
