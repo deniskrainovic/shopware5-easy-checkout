@@ -12,7 +12,10 @@
 
 ## CHANGELOG
 
-### Version 1.0.5 - Released 2021-06-29
+### Version 1.0.6 - Released 2021-07-08
+* Fixed : Support for Shopware 5.7
+
+### Version 1.0.5 - Released 2021-06-14
 * Fixed : Bugfixes in calculations as per product net/gross amounts 
 
 ### Version 1.0.4 - Released 2021-06-14
