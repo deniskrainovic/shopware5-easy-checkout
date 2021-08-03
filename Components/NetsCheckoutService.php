@@ -57,16 +57,25 @@ class NetsCheckoutService
             ]
         ];
 
-        $data['checkout']['returnUrl'] = $returUrl;
-        $data['checkout']['termsUrl'] = Shopware()->Config()->getByNamespace('NetsCheckoutPayment', 'terms_and_conditions_url');
+        $integrationType = Shopware()->Config()->getByNamespace('NetsCheckoutPayment', 'integrationtype');
 
-        $data['checkout']['integrationType'] = 'HostedPaymentPage';
-        $data['checkout']['merchantHandlesConsumerData'] = true;
+        $data['checkout']['integrationType'] = $integrationType;
+
+        if ($integrationType == 'EmbeddedCheckout') {
+            $data['checkout']['url'] = $returUrl;
+        } else {
+            $data['checkout']['cancelUrl'] = Shopware()->Front()->Router()->assemble(['controller' => 'Checkout','action' => 'confirm','forceSecure' => true]);
+            $data['checkout']['returnUrl'] = $returUrl;
+        }
+
+        $data['checkout']['termsUrl'] = Shopware()->Config()->getByNamespace('NetsCheckoutPayment', 'terms_url');
+        $data['checkout']['merchantTermsUrl'] = Shopware()->Config()->getByNamespace('NetsCheckoutPayment', 'merchant_terms_url');
 
         if (Shopware()->Config()->getByNamespace('NetsCheckoutPayment', 'chargenow')) {
             $data['checkout']['charge'] = true;
         }
 
+        $data['checkout']['merchantHandlesConsumerData'] = true;
         $data['checkout']['consumer'] = [
             'email' => $customer->getEmail(),
             'shippingAddress' => [
@@ -102,7 +111,7 @@ class NetsCheckoutService
         return $data;
     }
 
-    private function getOrderItems(array $basket, $customer = NULL): array
+    private function getOrderItems(array $basket,$customer = NULL): array
     {
         $items = [];
         // Products
@@ -117,7 +126,7 @@ class NetsCheckoutService
 
         $totalAmount = 0;
         foreach ($content as $item) {
-
+		
             $quantity = $item['quantity'];
             $product = $item['priceNumeric'];
             if (empty($custMode)) {
@@ -127,6 +136,7 @@ class NetsCheckoutService
                     $grossAmount = round($quantity * ($product * 100));
                     $netAmount = round($quantity * $unitPrice);
                     $taxAmount = $grossAmount - $netAmount;
+
                 } else {
                     $taxAmount = (float) str_replace(',', '.', $item['tax']);
                     $unitPrice = round($item['netprice'] * 100);
@@ -147,6 +157,7 @@ class NetsCheckoutService
                     'grossTotalAmount' => $grossAmount,
                     'netTotalAmount' => $netAmount
                 ];
+
             } else {
                 if ($custGrossAmount) {
                     $taxFormat = '1' . str_pad(number_format((float) $item['tax_rate'], 2, '.', ''), 5, '0', STR_PAD_LEFT);
@@ -174,6 +185,7 @@ class NetsCheckoutService
                     'grossTotalAmount' => $grossAmount,
                     'netTotalAmount' => $netAmount
                 ];
+
             }
 
             $totalAmount = $totalAmount + $grossAmount;

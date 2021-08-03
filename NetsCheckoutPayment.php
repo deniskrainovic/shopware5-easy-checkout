@@ -29,11 +29,7 @@ class NetsCheckoutPayment extends Plugin
                 'action' => 'NetsCheckout',
                 'active' => 0,
                 'position' => 0,
-                'additionalDescription' =>
-                    '<img src="http://your-image-url"/>'
-                    . '<div id="payment_desc">'
-                    . '  Nets checkout payment method'
-                    . '</div>'
+                'additionalDescription' => 'Nets checkout payment method'
             ];
             $installer->createOrUpdate($context->getPlugin(), $options);
             $this->createTables();

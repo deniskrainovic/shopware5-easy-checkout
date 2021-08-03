@@ -1,0 +1,21 @@
+.nets--iconbar { float: right; height: 45px; }
+.nets--block{ width:100%; display: inline-block; margin: 15px 0 0 0; }
+.row { display: flex; width: 100%; }
+div[class^="col-"], div[class*=" col-"] { float: left; margin: 0; }
+.col-12{ width:100%; }
+.col-8{ width:66.6%; }
+.col-6{ width:50%; }
+.col-4{ width:33.3333333%; }
+
+.cenr{ flex: 1; }
+.information--panel-item{ height: calc(50% - 11px); }
+.information--panel{ height: 100% }
+
+.pid { font-weight: 400; color: #007dbb; padding-left: 10px; }
+
+.confirm--content { padding-top: 0; }
+.content--nets.confirm--content { padding-top: 15px; }
+.content--debug.confirm--content { padding-top: 40px; }
+.confirm--content .nets--panel.panel { margin: 0px 20px 0px 0px; }
+.confirm--content .debug--panel.panel { margin: 0px 0px 0px 0px; }
+.debug--panel.panel > .panel--title.is--underline { padding: 1.25rem 0rem; border-bottom: 0px; }
