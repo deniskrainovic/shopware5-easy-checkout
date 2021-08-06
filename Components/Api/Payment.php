@@ -42,11 +42,30 @@ class Payment
         return isset($this->paymentObj->payment->summary->chargedAmount) ?
             $this->paymentObj->payment->summary->chargedAmount : 0;
     }
+	
+	public function getRefundedAmount() {
+        return isset($this->paymentObj->payment->summary->refundedAmount) ?
+            $this->paymentObj->payment->summary->refundedAmount : 0;
+    }
+	
+	public function getCancelledAmount() {
+        return isset($this->paymentObj->payment->summary->CancelledAmount) ?
+            $this->paymentObj->payment->summary->CancelledAmount : 0;
+    }
+	
+	public function getRefundStatus() {
+        return ($this->paymentObj->payment->refunds->state == "Pending") ?
+            $this->paymentObj->payment->refunds->state : NULL;
+    }
 
     public function getCheckoutUrl() {
         return $this->paymentObj->payment->checkout->url;
     }
 
+	public function getCurrency() {
+		 return $this->paymentObj->payment->orderDetails->currency;
+	}
+	
     public function getFirstChargeId()
     {
         if (isset($this->paymentObj->payment->charges)) {

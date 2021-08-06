@@ -12,13 +12,19 @@ class Shopware_Controllers_Backend_NetsCheckout  extends Shopware_Controllers_Ba
 
         /** @var  $payment \NetsCheckoutPayment\Models\NetsCheckoutPayment */
         $payment = Shopware()->Models()->getRepository(NetsCheckoutPayment::class)->findOneBy(['orderId' => $orderId]);
+		
+		// call api here
+            $data = $this->getpaymentstatusAction($orderId);
 
         if($payment) {
             $params = ['data' => ['id' => $payment->getOrderId(),
                 'orderId' => $payment->getOrderId(),
                 'amountAuthorized' => ($payment->getAmountAuthorized() - $payment->getAmountCaptured() ) / 100,
                 'amountCaptured' => ($payment->getAmountCaptured() - $payment->getAmountRefunded() ) / 100,
-                'amountRefunded' => $payment->getAmountRefunded() / 100]];
+                'amountRefunded' => $payment->getAmountRefunded() / 100,
+				'payStatus' => $data['paymentStatus'],
+				'currency' => $data['currency']
+				]];
         } else {
             $params = ['data' => []];
 
@@ -58,6 +64,25 @@ class Shopware_Controllers_Backend_NetsCheckout  extends Shopware_Controllers_Ba
         }catch (\Exception $ex ) {
             $params = ["success" => false,
                 "msg" => "fail"];
+        }
+        $this->View()->assign($params);
+    }
+	
+	public function getpaymentstatusAction($orderId)
+    {
+
+        /** @var $service \NetsCheckoutPayment\Components\NetsCheckoutService */
+        $service = $this->get('nets_checkout.checkout_service');
+
+        try {
+            $paymentData = $service->getPaymentStatus($orderId);
+
+            return $paymentData; 
+        } catch (\Exception $ex) {
+            $params = [
+                "success" => false,
+                "msg" => "fail"
+            ];
         }
         $this->View()->assign($params);
     }

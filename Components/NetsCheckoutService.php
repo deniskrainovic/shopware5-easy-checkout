@@ -402,6 +402,56 @@ class NetsCheckoutService
         }
     }
 
+  public function getPaymentStatus($orderId)
+    {
+
+        // get payment id based on order number
+        $rep = Shopware()->Models()->getRepository(Order::class);
+
+        $resultOrder = $rep->findOneBy([
+            'number' => $orderId
+        ]);
+        $paymentId = $resultOrder->getTransactionId();
+		$this->apiService->setAuthorizationKey($this->getAuthorizationKey());
+        $payLoad = $this->apiService->getPayment($paymentId);
+
+			$paymentStatus = '';
+			$currency = $payLoad->getCurrency();
+            $cancelled = $payLoad->getCancelledAmount();
+            $reserved = $payLoad->getReservedAmount();
+            $charged = $payLoad->getChargedAmount();
+            $refunded = $payLoad->getRefundedAmount();
+            $pending = $response['payment']['refunds'][0]['state'] == "Pending";
+            $partialc = $reserved - $charged;
+            $partialr = $reserved - $refunded;
+           
+            if ($reserved) {
+                if ($cancelled) {
+                    $paymentStatus = "Cancelled";
+                } else if ($charged) {
+                    if ($reserved != $charged) {
+                        $paymentStatus = "Partial Charged";
+                    } else if ($refunded) {
+                        if ($reserved != $refunded) {
+                            $paymentStatus = "Partial Refunded";
+                        } else {
+                            $paymentStatus = "Refunded";
+                        }
+                    } else {
+                        $paymentStatus = "Charged";
+                    }
+                } else if ($pending) {
+                    $paymentStatus = "Refund Pending";
+                } else {
+                    $paymentStatus = 'Reserved';
+                }
+            } else {
+                $paymentStatus = "Failed";
+            }
+			
+        return array("paymentStatus" => $paymentStatus, "currency" => $currency);
+    }
+	
     private function orderRowsOperation($amount, $name)
     {
         $result = [

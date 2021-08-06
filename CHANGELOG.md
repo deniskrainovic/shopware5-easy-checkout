@@ -6,11 +6,14 @@
 |Author | `Nets eCom`
 |Prefix | `EASY-SW5`
 |Shop Version | `5+`
-|Version | `1.1.0`
+|Version | `1.1.1`
 |Guide | https://tech.nets.eu/shopmodules
 |Github | https://github.com/Nets-eCom/shopware5-easy-checkout
 
 ## CHANGELOG
+
+### Version 1.1.1 - Released 2021-08-06
+* Partial Capture/refund enhancements
 
 ### Version 1.1.0 - Released 2021-08-03
 * Embedded checkout and icons bar added
