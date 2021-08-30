@@ -7,7 +7,7 @@
 |Prefix | `EASY-SW5`
 |Shop Version | `5+`
 |Version | `1.1.1`
-|Guide | https://tech.nets.eu/shopmodules
+|Guide | https://developers.nets.eu/nets-easy/en-EU/docs/nets-easy-for-shopware/nets-easy-for-shopware-shopware-5/
 |Github | https://github.com/Nets-eCom/shopware5-easy-checkout
 
 ## INSTALLATION
