@@ -6,7 +6,7 @@
 |Author | `Nets eCom`
 |Prefix | `EASY-SW5`
 |Shop Version | `5+`
-|Version | `1.1.1`
+|Version | `1.1.2`
 |Guide | https://developers.nets.eu/nets-easy/en-EU/docs/nets-easy-for-shopware/nets-easy-for-shopware-shopware-5/
 |Github | https://github.com/Nets-eCom/shopware5-easy-checkout
 
@@ -14,7 +14,7 @@
 
 ### Download / Installation
 1. Unzip and upload the plugin file manually to root/custom/plugins OR Upload the zipped plugin file(https://github.com/Nets-eCom/shopware5-easy-checkout/tree/master/package)
-"NetsCheckoutPayment-shopware5-1.1.1" in admin > Configuration > Plugin Manager and using the 'Upload plugin' option.
+"NetsCheckoutPayment-shopware5-1.1.2" in admin > Configuration > Plugin Manager and using the 'Upload plugin' option.
 2. Clear your cache and refresh after a successful installation in admin > configuration > Cache/Performance.
 
 
