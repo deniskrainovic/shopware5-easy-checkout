@@ -2,10 +2,15 @@
 <plugin xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/5.2/engine/Shopware/Components/Plugin/schema/plugin.xsd">
     <label lang="de">Nets Checkout Payment</label>
     <label lang="en">Nets Checkout Payment</label>
-    <version>1.1.2</version>
+    <version>1.1.3</version>
     <link>https://www.nets.eu/</link>
     <author>Nets A/S</author>
     <compatibility minVersion="5.3.0" />
+    <changelog version="1.1.3">
+        <changes lang="en">
+            Improved A2A Payment Methods compatibility
+        </changes>
+    </changelog>
 	<changelog version="1.1.2">
         <changes lang="en">
            HTTP Header Issue Fixed

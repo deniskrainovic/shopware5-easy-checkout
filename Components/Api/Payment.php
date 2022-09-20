@@ -34,8 +34,13 @@ class Payment
     }
 
     public function getReservedAmount() {
-        return isset($this->paymentObj->payment->summary->reservedAmount) ?
-            $this->paymentObj->payment->summary->reservedAmount : 0;
+        if( $this->getPaymentType() == 'A2A' ) {
+            return isset($this->paymentObj->payment->summary->chargedAmount) ?
+                 $this->paymentObj->payment->summary->chargedAmount : 0;
+        }else{
+            return isset($this->paymentObj->payment->summary->reservedAmount) ?
+                $this->paymentObj->payment->summary->reservedAmount : 0;
+        }
     }
 
     public function getChargedAmount() {
@@ -73,4 +78,5 @@ class Payment
             return $charges->chargeId;
         }
     }
+    
 }

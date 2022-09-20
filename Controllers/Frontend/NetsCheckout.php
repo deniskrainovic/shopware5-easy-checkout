@@ -3,6 +3,7 @@
 use NetsCheckoutPayment\Models\NetsCheckoutPayment;
 use Shopware\Components\CSRFWhitelistAware;
 use NetsCheckoutPayment\Components\Api\Exception\EasyApiException;
+use NetsCheckoutPayment\Models\NetsCheckoutPaymentApiOperations;
 use Shopware\Models\Order\Status;
 use function Shopware;
 
@@ -53,16 +54,19 @@ class Shopware_Controllers_Frontend_NetsCheckout extends Shopware_Controllers_Fr
         $checkoutApiService->setAuthorizationKey($key);
 
         /** @var  $payment  \NetsCheckoutPayment\Components\Api\Payment */
-        $payment = $checkoutApiService->getPayment($this->request->get('paymentid'));
+        $payment = $checkoutApiService->getPayment( empty($this->request->get('paymentid')) ? $this->request->get('paymentId') : $this->request->get('paymentid') );
 
         if($payment->getReservedAmount() || $payment->getPaymentMethod()) {
-            $paymentId = $this->request->get('paymentid');
+            $paymentId =  empty($this->request->get('paymentid')) ? $this->request->get('paymentId') : $this->request->get('paymentid') ;
 
             // autocapture was enbaled for the order
             $paymentStatus = $payment->getChargedAmount() == $payment->getReservedAmount() ?
                              Status::PAYMENT_STATE_COMPLETELY_PAID : Status::PAYMENT_STATE_RESERVED;
 
-            $orderNumber = $this->saveOrder(($this->request->get('paymentid')), $paymentId, $paymentStatus);
+            if($payment->getPaymentType() == 'A2A'){
+                $paymentStatus = Status::PAYMENT_STATE_COMPLETELY_PAID;
+            }
+            $orderNumber = $this->saveOrder( (empty($this->request->get('paymentid')) ? $this->request->get('paymentId') : $this->request->get('paymentid')  ), $paymentId, $paymentStatus);
 
             if($orderNumber) {
                     // update reference from temporary to real orderid through Nets api
@@ -75,7 +79,12 @@ class Shopware_Controllers_Frontend_NetsCheckout extends Shopware_Controllers_Fr
                     $paymentModel->setOrderId($orderNumber);
                     $paymentModel->setNetsPaymentId( $payment->getPaymentId() );
                     $paymentModel->setPaytype( $payment->getPaymentType() );
-                    $paymentModel->setAmountAuthorized($payment->getReservedAmount());
+                     //if A2A then add reserved amount as charged
+                    if($payment->getPaymentType() == 'A2A'){
+                        $paymentModel->setAmountAuthorized($payment->getChargedAmount());
+                    }else{
+                        $paymentModel->setAmountAuthorized($payment->getReservedAmount());
+                    }
                     $paymentModel->setAmountCaptured($payment->getChargedAmount());
                     $paymentModel->setItemsJson($this->session->offsetGet('nets_items_json'));
                     $this->session->offsetUnset('nets_items_json');
@@ -83,7 +92,21 @@ class Shopware_Controllers_Frontend_NetsCheckout extends Shopware_Controllers_Fr
                     Shopware()->Models()->persist($paymentModel);
                     Shopware()->Models()->flush($paymentModel);
 
-                $this->redirect(['controller' => 'checkout', 'action' => 'finish', 'sUniqueID' => $this->request->get('paymentid')]);
+                    
+                    //if A2A add captured value in nets_checkout_payments_api_operations table
+                    if($payment->getPaymentType() == 'A2A' || Shopware()->Config()->getByNamespace('NetsCheckoutPayment', 'chargenow') ){
+                        $paymentOperation = new NetsCheckoutPaymentApiOperations();
+                        $paymentOperation->setOperationType('capture');
+                        $paymentOperation->setOperationAmount($payment->getChargedAmount());
+                        $paymentOperation->setAmountAvailable($payment->getChargedAmount());
+                        $paymentOperation->setOrderId($orderNumber);
+                        $paymentOperation->setOperationId($payment->getFirstChargeId());
+        
+                        Shopware()->Models()->persist($paymentOperation);
+                        Shopware()->Models()->flush($paymentOperation);
+                    }
+
+                $this->redirect(['controller' => 'checkout', 'action' => 'finish', 'sUniqueID' =>  empty($this->request->get('paymentid')) ? $this->request->get('paymentId') : $this->request->get('paymentid') ]);
             } else {
                 $this->redirect(['controller' => 'checkout', 'action' => 'confirm']);
             }

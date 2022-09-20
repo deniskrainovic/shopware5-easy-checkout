@@ -365,7 +365,9 @@ class NetsCheckoutService
                 } else {
                     $data = json_encode($this->orderRowsOperation($amount, 'item1'));
                 }
+                
                 $result = $this->apiService->refundPayment($operation->getOperationId(), $data);
+               
                 // update Operations model
                 /** @var  $paymentOperation \NetsCheckoutPayment\Models\NetsCheckoutPaymentApiOperations */
                 $paymentOperation = new NetsCheckoutPaymentApiOperations();
@@ -424,7 +426,11 @@ class NetsCheckoutService
             $pending = $response['payment']['refunds'][0]['state'] == "Pending";
             $partialc = $reserved - $charged;
             $partialr = $reserved - $refunded;
-           
+            
+            if($payLoad->getPaymentType() == 'A2A'){
+                $reserved = $charged;
+            }
+
             if ($reserved) {
                 if ($cancelled) {
                     $paymentStatus = "Cancelled";
