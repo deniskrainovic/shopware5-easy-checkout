@@ -36,7 +36,12 @@ class Shopware_Controllers_Backend_NetsCheckout  extends Shopware_Controllers_Ba
       $orderId = $this->Request()->get('id');;
       /** @var $service \NetsCheckoutPayment\Components\NetsCheckoutService */
       $service = $this->get('nets_checkout.checkout_service');
-      $amountToCharge = str_replace(',', '.', $this->Request()->get('amountAuthorized')) * 100;
+      $amountToCharge = floatval(
+          bcmul(
+              str_replace(',', '.', $this->Request()->get('amountAuthorized')),
+              100
+          )
+      );
 
       try {
           $service->chargePayment($orderId, $amountToCharge);
@@ -54,7 +59,12 @@ class Shopware_Controllers_Backend_NetsCheckout  extends Shopware_Controllers_Ba
         $orderId = $this->Request()->get('id');;
         /** @var $service \NetsCheckoutPayment\Components\NetsCheckoutService */
         $service = $this->get('nets_checkout.checkout_service');
-        $amountToRefund = str_replace(',', '.', $this->Request()->get('amountCaptured')) * 100;
+        $amountToRefund = floatval(
+            bcmul(
+                str_replace(',', '.', $this->Request()->get('amountCaptured')),
+                100
+            )
+        );
 
         try {
             $service->refundPayment($orderId, $amountToRefund);
